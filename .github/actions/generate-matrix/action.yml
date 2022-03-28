@@ -26,7 +26,7 @@ runs:
       run: |
         # See https://github.community/t/check-pushed-file-changes-with-git-diff-tree-in-github-actions/17220/10
         DIFF=''
-        if [ $GITHUB_BASE_REF ]; then
+        if [ ${{ github.event_name }} == 'pull_request' ]; then
           # Pull Request
           git fetch origin $GITHUB_BASE_REF --depth=1
           DIFF=$( git diff --name-status origin/$GITHUB_BASE_REF $GITHUB_SHA )
