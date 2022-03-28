@@ -1,0 +1,186 @@
+name: 'Terragrunt GitHub Actions'
+on: [push, pull_request]
+
+
+env:
+  tf_working_dir: './CVT-IaC-Live-AZURE/CF/CF-NonProd/L3/RG-1'
+  STORAGE_KEY: ${{ secrets.STORAGE_KEY }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TERRAGRUNT_DOWNLOAD: '.terragrunt-cache'
+jobs:
+  pre-commit:
+    name: 'Pre-Commit'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - name: 'Pre-Commit'
+        continue-on-error: true
+        uses: ./.github/actions/pre-commit
+
+      - name: 'Pre-Commit_Output'
+        id: pre-commit
+        uses: ./.github/actions/pre-commit-output
+
+      - name: Comment-push
+        if: github.event_name != 'pull_request'
+        uses: ./.github/actions/commit-comment  #'peter-evans/commit-comment@v1'
+        with:
+          body: ${{ steps.pre-commit.outputs.output }} #${{ steps.pre-commit.outputs.precommit_output }}
+
+      - name: Cleanup
+        uses: ./.github/actions/cleanup
+
+
+  Pull_InfraCost:
+    if: github.event_name == 'pull_request'
+    name: 'Infracost-pull'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in with Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_wrapper: false ## This is recommended so the `terraform show` command outputs valid JSON
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v1.1.0
+        with:
+          terragrunt_version: 0.35.9
+      
+      #- name: Install TgSwitch
+      #  run: curl -L https://raw.githubusercontent.com/warrensbox/tgswitch/release/install.sh | bash
+
+      #- name: Install TFenv
+      #  run: brew install tfenv
+      
+      - name: 'Terragrunt init-plan'
+        continue-on-error: true
+        run: |
+          terragrunt init
+          terragrunt plan-all
+
+      - name: 'ChangedFiles'
+        id: files
+        uses: jitterbit/get-changed-files@v1
+
+      - name: 'List Changed Files'
+        run: |
+          for changed_file in ${{ steps.files.outputs.all }}; do
+            echo "Do something with this ${changed_file}."
+          done
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v1
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          
+      - name: Run Infracost
+        run: infracost breakdown --path=${{ env.tf_working_dir }} --format=json --out-file=${{ env.tf_working_dir }}infracost.json
+        
+      - name: Post the comment
+        uses: infracost/actions/comment@v1
+        with:
+          path: ${{ env.tf_working_dir }}infracost.json
+          behavior: new
+
+      
+  generate-matrix:
+      name: 'Generate matrix for build'
+      runs-on: ubuntu-latest
+
+      outputs:
+        matrix: ${{ steps.set-matrix.outputs.matrix }}
+        matrix2: ${{ steps.set-matrix.outputs.matrix2 }}
+        BASE_SHA: ${{ steps.set-matrix.outputs.BASE_SHA }}
+      steps:
+
+        - uses: actions/checkout@v3
+
+        - name: Create Matrixes
+          id: set-matrix
+          uses: ./.github/actions/generate-matrix
+
+
+  Plan:
+    name: 'All the resource plannings'
+    if: ${{ needs.generate-matrix.outputs.matrix2 }} != '{"include":[]}'
+    needs: generate-matrix
+    strategy:
+      matrix: ${{fromJson(needs.generate-matrix.outputs.matrix2)}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in with Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v1.1.0
+        with:
+          terragrunt_version: 0.35.9
+
+        
+      - name: Run TerraGrunt
+        run: |
+          echo terragrunt init --working-directory ${{ matrix.path }}
+          echo terragrunt plan --working-directory ${{ matrix.path }}
+          terragrunt init
+          terragrunt plan -no-color --terragrunt-working-dir ${{matrix.files.name}} --terragrunt-include-external-dependencies -out ${{matrix.files.log}}-planfile >> ${{matrix.files.log}}-planfile.log 2>&1
+
+          
+  Destroy:
+    name: 'All the destroy plannings'
+    if: ${{ needs.generate-matrix.outputs.matrix }} != '{"include":[]}'
+    needs: generate-matrix
+    strategy:
+      matrix: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in with Azure
+        uses: azure/login@v1
+        #with:
+        #  creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate-matrix.outputs.sha }}
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v1.1.0
+        with:
+          terragrunt_version: 0.35.9
+
+      - name: Run TerraGrunt
+        working-directory: ${{ matrix.path }}
+        run: |
+          echo terragrunt init 
+          echo terragrunt plan -destroy
+          terragrunt init
+          terragrunt plan -destroy -no-color --terragrunt-include-external-dependencies -out ${{matrix.files.log}}-planfile >> ${{matrix.files.log}}-planfile.log 2>&1
