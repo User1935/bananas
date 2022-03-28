@@ -8,29 +8,29 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   TERRAGRUNT_DOWNLOAD: '.terragrunt-cache'
 jobs:
-  pre-commit:
-    name: 'Pre-Commit'
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v3
-
-      - name: 'Pre-Commit'
-        continue-on-error: true
-        uses: ./.github/actions/pre-commit
-
-      - name: 'Pre-Commit_Output'
-        id: pre-commit
-        uses: ./.github/actions/pre-commit-output
-
-      - name: Comment-push
-        if: github.event_name != 'pull_request'
-        uses: ./.github/actions/commit-comment  #'peter-evans/commit-comment@v1'
-        with:
-          body: ${{ steps.pre-commit.outputs.output }} #${{ steps.pre-commit.outputs.precommit_output }}
-
-      - name: Cleanup
-        uses: ./.github/actions/cleanup
+  #pre-commit:
+  #  name: 'Pre-Commit'
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - name: 'Checkout'
+  #      uses: actions/checkout@v3
+#
+  #    - name: 'Pre-Commit'
+  #      continue-on-error: true
+  #      uses: ./.github/actions/pre-commit
+#
+  #    - name: 'Pre-Commit_Output'
+  #      id: pre-commit
+  #      uses: ./.github/actions/pre-commit-output
+#
+  #    - name: Comment-push
+  #      if: github.event_name != 'pull_request'
+  #      uses: ./.github/actions/commit-comment  #'peter-evans/commit-comment@v1'
+  #      with:
+  #        body: ${{ steps.pre-commit.outputs.output }} #${{ steps.pre-commit.outputs.precommit_output }}
+#
+  #    - name: Cleanup
+  #      uses: ./.github/actions/cleanup
 
 
   Pull_InfraCost:
@@ -184,3 +184,4 @@ jobs:
           echo terragrunt plan -destroy
           terragrunt init
           terragrunt plan -destroy -no-color --terragrunt-include-external-dependencies -out ${{matrix.files.log}}-planfile >> ${{matrix.files.log}}-planfile.log 2>&1
+      

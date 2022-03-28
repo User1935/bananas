@@ -22,7 +22,7 @@ resource "random_string" "singlealphanum" {
   upper   = false
 }
 
-# random
+## random
 locals {
   random                = random_string.fullrandom.result
   singlerandom_letter   = random_string.singlechar.result
@@ -90,3 +90,4 @@ locals {
 output "max" {
   value = local.max
 }
+#
