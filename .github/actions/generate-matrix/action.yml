@@ -43,6 +43,7 @@ runs:
         fi
         # Escape newlines (replace \n with %0A)
         echo "::set-output name=diff::$( echo "$DIFF" | sed ':a;N;$!ba;s/\n/ /g' )"
+        echo "::debug::$DIFF | sed ':a;N;$!ba;s/\n/ /g'"
       shell: bash
 
     - name: Set matrix for build
@@ -55,6 +56,7 @@ runs:
 
         # Convert to arrays
         array=($DIFF)
+        echo $array
 
         i=0
         while [ $i -lt ${#array[@]} ]
@@ -65,10 +67,10 @@ runs:
           echo "::debug::i=[$i] [${array[$i]}]"
 
           if [[ "${array[$i]}" == D* ]]; then
-                  
+                  echo D ${finalarray[-1]}
                   # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
                   if [ "${finalarray[-1]}" == 'terragrunt.hcl' ]; then
-                          
+                          echo success
                           unset finalarray[-1]
                           path=$(echo ${finalarray[@]} | sed -r 's/ +/\//g')
                           if [[ "$JSON" != *$path* ]]; then
@@ -77,12 +79,14 @@ runs:
                   fi
           else
             if [[ "${array[$i]}" == R* ]]; then
+                  echo R ${finalarray[-1]}
                   JSONline2="${array[$(($i+2))]}"
                   final2=${JSONline//\// }
                   finalarray2=($final2)
+                  echo $finalarray2
                   # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
                   if [ "${finalarray[-1]}" == 'terragrunt.hcl' ]; then
-                          
+                          echo success
                           unset finalarray[-1]
                           path=$(echo ${finalarray[@]} | sed -r 's/ +/\//g')
                           if [[ "$JSON" != *$path* ]]; then
@@ -99,10 +103,11 @@ runs:
                   fi
                   i=$(($i+1))  
             else
+                  echo m OR c "{finalarray[-1]}
                   # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
                   # && [ ${#finalarray2[@]} -gt 3 ]
                   if [ "${finalarray[-1]}" == 'terragrunt.hcl' ]; then
-                          
+                          echo success
                           unset finalarray[-1]
                           path=$(echo ${finalarray[@]} | sed -r 's/ +/\//g')
                           if [[ "$JSONCREATE" != *$path* ]]; then
