@@ -109,6 +109,11 @@ jobs:
           id: set-matrix
           uses: ./.github/actions/generate-matrix
 
+        - name: Debug
+          run: |
+            echo  ${{ steps.set-matrix.outputs.matrix }}
+            echo  ${{ steps.set-matrix.outputs.matrix2 }}
+            echo  ${{ steps.set-matrix.outputs.BASE_SHA }}
 
   Plan:
     name: 'All the resource plannings'
@@ -184,4 +189,3 @@ jobs:
           echo terragrunt plan -destroy
           terragrunt init
           terragrunt plan -destroy -no-color --terragrunt-include-external-dependencies -out ${{matrix.files.log}}-planfile >> ${{matrix.files.log}}-planfile.log 2>&1
-      
