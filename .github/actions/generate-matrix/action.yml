@@ -75,6 +75,7 @@ runs:
                           path=$(echo ${finalarray[@]} | sed -r 's/ +/\//g')
                           if [[ "$JSON" != *$path* ]]; then
                               JSON="$JSON{\"path\":\"$path/\"},"
+                              echo $JSON
                           fi
                   fi
           else
@@ -91,6 +92,7 @@ runs:
                           path=$(echo ${finalarray[@]} | sed -r 's/ +/\//g')
                           if [[ "$JSON" != *$path* ]]; then
                               JSON="$JSON{\"path\":\"$path/\"},"
+                              echo $JSON
                           fi
                   fi
                   if [ "${finalarray2[-1]}" == 'terragrunt.hcl' ]; then
@@ -99,11 +101,12 @@ runs:
                           path=$(echo ${finalarray2[@]} | sed -r 's/ +/\//g')
                           if [[ "$JSONCREATE" != *$path* ]]; then
                               JSONCREATE="$JSON{\"path\":\"$path/\"},"
+                              echo $JSONCREATE
                           fi
                   fi
                   i=$(($i+1))  
             else
-                  echo m OR c "{finalarray[-1]}
+                  echo m OR c {finalarray[-1]}
                   # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
                   # && [ ${#finalarray2[@]} -gt 3 ]
                   if [ "${finalarray[-1]}" == 'terragrunt.hcl' ]; then
@@ -112,6 +115,7 @@ runs:
                           path=$(echo ${finalarray[@]} | sed -r 's/ +/\//g')
                           if [[ "$JSONCREATE" != *$path* ]]; then
                               JSONCREATE="$JSONCREATE{\"path\":\"$path/\"},"
+                              echo $JSONCREATE
                           fi
                   fi
             fi
