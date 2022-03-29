@@ -4,11 +4,11 @@ description: 'Run and Settup Pre-commit'
 
 outputs:
   matrix:
-    value: ${{ steps.set-matrix.outputs.matrix }}
+    value: ${{ steps.set-output.outputs.matrix }}
     description: "JSON file with paths of items to be deleted"
 
   matrix2: 
-    value: ${{ steps.set-matrix.outputs.matrix2 }}
+    value: ${{ steps.set-ouput.outputs.matrix2 }}
     description: "JSON file with paths of items to be created"
 
   BASE_SHA: 
@@ -110,11 +110,23 @@ runs:
         JSONCREATE += "]}"
 
         # Set output
-        os.system('echo "::set-output name=matrix::$( echo "$JSON" )"')
-        os.system('echo "::set-output name=matrix::$( echo "$JSONCREATE" )"')
+        env_file = os.getenv('GITHUB_ENV')
+
+        with open(env_file, "a") as file:
+            file.write("JSON={}".format(JSON))
+            file.write("JSONCREATE={}".format(JSONCREATE))
+        #os.system('echo "::set-output name=matrix::$( echo "$JSON" )"')
+        #os.system('echo "::set-output name=matrix::$( echo "$JSONCREATE" )"')
       shell: python
       env:
         output: "${{ steps.diff.outputs.diff }}"
+
+    - name: Set Outputs
+      id: set-output
+      run: |
+        echo "::set-output name=matrix::$( echo "$JSON" )"
+        echo "::set-output name=matrix2::$( echo "$JSONCREATE" )"
+      shell: bash
 
 #    - name: Set matrix for build
 #      id: set-matrix
