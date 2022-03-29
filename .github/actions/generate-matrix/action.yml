@@ -52,6 +52,7 @@ runs:
         import os
         # See https://stackoverflow.com/a/62953566/11948346
         DIFF = os.environ['output']
+        DIFF = DIFF.replace('\t',' ')
         array = DIFF.split(' ')
 
         JSON = "{\"include\":["
@@ -59,62 +60,61 @@ runs:
 
         i=0
         while (i < len(array) ):
-                JSONline = array[i+1]
-                finalarray = JSONline.split('/')
-                #echo "::debug::i=[$i] [${array[$i]}]"
-
-                if ('D' in array[i]):
-                        #echo D ${finalarray[-1]}
-                        # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
-                        if (finalarray[-1] == 'terragrunt.hcl'):
-                                #echo success
-                                
-                                path = JSONline.replace('terragrunt.hcl','')
-                                if not (path in JSON):
-                                        JSON +='{"path":"{}"},'.format(path)
+            JSONline = array[i+1]
+            finalarray = JSONline.split('/')
+            #echo "::debug::i=[$i] [${array[$i]}]"
+            if ('D' in array[i]):
+            #echo D ${finalarray[-1]}
+            # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
+                if (finalarray[-1] == 'terragrunt.hcl'):
+                    #echo success
+                                        
+                    path = JSONline.replace('terragrunt.hcl','')
+                    if not (path in JSON):
+                        JSON +='{' + '"path":"{}"'.format(path) + '},'
+            else:
+                if ('R' in array[i]):
+                    JSONline2 = array[i+2]
+                    finalarray2 = JSONline2.split('/')
+                    # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
+                    if (finalarray2[-1] == 'terragrunt.hcl' and finalarray[-1] == 'terragrunt.hcl'):
+                        path = JSONline.replace('terragrunt.hcl','')
+                        path2 = JSONline2.replace('terragrunt.hcl','')
+                        if not (path in JSON):
+                            JSON +='{' + '"path":"{}"'.format(path) + '},'
+                        if not (path in JSONCREATE):
+                            JSONCREATE +='{' + '"path":"{}"'.format(path2) + '},'
+                    i += 1 
                 else:
-                        if ('R' in array[i]):
-
-                                JSONline2 = array[i+2]
-                                finalarray2 = JSONline2.split('/')
-                                # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
-                                if (finalarray2[-1] == 'terragrunt.hcl' and finalarray[-1] == 'terragrunt.hcl'):
-                                        path = JSONline.replace('terragrunt.hcl','')
-                                        if not (path in JSON):
-                                                JSON +='{"path":"{}"},'.format(path)
-
-                                        path2 = JSONline2.replace('terragrunt.hcl','')
-                                        if not (path in JSONCREATE):
-                                                JSONCREATE +='{"path":"{}"},'.format(path2)
-
-                                i += 1 
-                        else:
-                                #echo m OR c {finalarray[-1]}
-                                # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
-                                # && [ ${#finalarray2[@]} -gt 3 ]
-                                if (finalarray[-1] == 'terragrunt.hcl'):
-                                        path = JSONline.replace('terragrunt.hcl','')
-                                        if not (path in JSONCREATE):
-                                                JSONCREATE +='{"path":"{}"},'.format(path)
+                    #echo m OR c {finalarray[-1]}
+                    # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
+                    # && [ ${#finalarray2[@]} -gt 3 ]
+                    if (finalarray[-1] == 'terragrunt.hcl'):
+                        path = JSONline.replace('terragrunt.hcl','')
+                        if not (path in JSONCREATE):
+                            JSONCREATE +='{' + '"path":"{}"'.format(path) + '},'
 
 
-                i += 2 
+            i += 2 
 
 
         if(JSON[-1] == ','):
-                JSON = JSON[:-1]
+            JSON = JSON[:-1]
         if(JSONCREATE[-1] == ','):
-                JSONCREATE = JSON[:-1]    
+            JSONCREATE = JSONCREATE[:-1]    
 
         JSON += "]}"
         JSONCREATE += "]}"
+
+        print(JSON)
+        print(JSONCREATE)
 
         # Set output
         env_file = os.getenv('GITHUB_ENV')
 
         with open(env_file, "a") as file:
-            file.write("JSON={}".format(JSON))
-            file.write("JSONCREATE={}".format(JSONCREATE))
+            file.write("JSON={}\n".format(JSON))
+            file.write("JSONCREATE={}\n".format(JSONCREATE))
         #os.system('echo "::set-output name=matrix::$( echo "$JSON" )"')
         #os.system('echo "::set-output name=matrix::$( echo "$JSONCREATE" )"')
       shell: python
