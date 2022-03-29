@@ -63,7 +63,7 @@ runs:
                 finalarray = JSONline.split('/')
                 #echo "::debug::i=[$i] [${array[$i]}]"
 
-                if (D in array[i]):
+                if ('D' in array[i]):
                         #echo D ${finalarray[-1]}
                         # Is a terragrunt.hcl file? and Is it not the root terragrun.hcl file?
                         if (finalarray[-1] == 'terragrunt.hcl'):
@@ -73,7 +73,7 @@ runs:
                                 if not (path in JSON):
                                         JSON +='{"path":"{}"},'.format(path)
                 else:
-                        if (R in array[i]):
+                        if ('R' in array[i]):
 
                                 JSONline2 = array[i+2]
                                 finalarray2 = JSONline2.split('/')
