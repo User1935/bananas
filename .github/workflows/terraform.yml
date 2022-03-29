@@ -98,9 +98,9 @@ jobs:
       runs-on: ubuntu-latest
 
       outputs:
-        matrix: ${{ steps.set-matrix.outputs.matrix }}
-        matrix2: ${{ steps.set-matrix.outputs.matrix2 }}
-        BASE_SHA: ${{ steps.set-matrix.outputs.BASE_SHA }}
+        matrix: ${{ steps.set-output.outputs.matrix }}
+        matrix2: ${{ steps.set-output.outputs.matrix2 }}
+        BASE_SHA: ${{ steps.set-ouput.outputs.BASE_SHA }}
       steps:
 
         - uses: actions/checkout@v3
@@ -110,7 +110,10 @@ jobs:
           uses: ./.github/actions/generate-matrix
 
         - name: Debug
+          id: set-output
           run: |
+            echo "::set-output name=matrix::$( echo ${{ steps.set-matrix.outputs.matrix }} )"
+            echo "::set-output name=matrix2::$( echo ${{ steps.set-matrix.outputs.matrix }} )"
             echo  ${{ steps.set-matrix.outputs.matrix }}
             echo  ${{ steps.set-matrix.outputs.matrix2 }}
             echo  ${{ steps.set-matrix.outputs.BASE_SHA }}
