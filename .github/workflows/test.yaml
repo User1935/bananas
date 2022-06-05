@@ -15,5 +15,7 @@ jobs:
 
     steps:
      - name: 'Testing'
-       run:
+       run: |
+          console.log('pussy')
+       shell: javascript
         
