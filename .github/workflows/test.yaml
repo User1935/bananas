@@ -1,0 +1,19 @@
+name: Testing
+
+on:
+
+  push:
+    branches:
+      - 'main'
+
+
+jobs:
+
+  pre-commit:
+    name: 'Pre-Commit'
+    runs-on: ubuntu-latest
+
+    steps:
+     - name: 'Testing'
+       run:
+        
