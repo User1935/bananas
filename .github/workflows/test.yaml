@@ -1,21 +1,16 @@
 name: Testing
 
-on:
-
-  push:
-    branches:
-      - 'main'
+on: ['push']
 
 
 jobs:
+     pre-commit:
+          name: 'Pre-Commit'
+          runs-on: ubuntu-latest
 
-  pre-commit:
-    name: 'Pre-Commit'
-    runs-on: ubuntu-latest
+          steps:
+          - name: 'Testing'
+            run: |
+               console.log('pussy')
 
-    steps:
-     - name: 'Testing'
-       run: |
-          console.log('pussy')
-       shell: javascript
-        
+
